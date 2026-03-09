@@ -1,13 +1,9 @@
 const { app, BrowserWindow, shell, session } = require('electron');
-const path = require('path');
 
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 
 app.commandLine.appendSwitch('enable-usermedia-screen-capturing');
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
-app.commandLine.appendSwitch('disable-web-security');
-app.commandLine.appendSwitch('allow-running-insecure-content');
-app.commandLine.appendSwitch('ignore-certificate-errors');
 app.commandLine.appendSwitch('disable-features', 'IsolateOrigins,site-per-process');
 
 let mainWindow;
@@ -16,16 +12,12 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
-    minWidth: 900,
-    minHeight: 600,
     title: 'ExeChat',
     backgroundColor: '#0f0f14',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: false,
       webSecurity: false,
-      allowRunningInsecureContent: true,
-      experimentalFeatures: true,
       sandbox: false,
       partition: 'persist:exechat'
     },
@@ -33,27 +25,17 @@ function createWindow() {
     show: false
   });
 
-  const ses = mainWindow.webContents.session;
-  
-  ses.setPermissionRequestHandler((webContents, permission, callback) => {
-    callback(true);
-  });
-  
-  ses.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
-    return true;
-  });
-
-  ses.setDisplayMediaRequestHandler((request, callback) => {
-    callback({ video: request.videoRequested, audio: request.audioRequested });
-  });
+  mainWindow.webContents.session.setPermissionRequestHandler((wc, permission, callback) => callback(true));
+  mainWindow.webContents.session.setPermissionCheckHandler(() => true);
 
   mainWindow.loadURL('https://exechat.duckdns.org');
-  
-  mainWindow.once('ready-to-show', () => mainWindow.show());
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+    mainWindow.webContents.openDevTools({ mode: 'detach' }); // Ayrı pencerede açılır
+  });
 
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
-    return { action: 'deny' };
+  mainWindow.webContents.on('render-process-gone', (e, details) => {
+    console.log('CRASH REASON:', details.reason, details.exitCode);
   });
 
   mainWindow.on('close', (e) => {
