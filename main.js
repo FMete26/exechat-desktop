@@ -4,7 +4,6 @@ let mainWindow;
 
 app.commandLine.appendSwitch('enable-usermedia-screen-capturing');
 app.commandLine.appendSwitch('allow-http-screen-capture');
-app.commandLine.appendSwitch('use-fake-ui-for-media-stream');
 app.commandLine.appendSwitch('enable-experimental-web-platform-features');
 
 function createWindow() {
@@ -19,7 +18,6 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       webSecurity: false,
-      allowRunningInsecureContent: false,
       experimentalFeatures: true
     },
     autoHideMenuBar: true,
@@ -36,11 +34,6 @@ function createWindow() {
 
   mainWindow.loadURL('https://exechat.duckdns.org');
   mainWindow.once('ready-to-show', () => mainWindow.show());
-
-  mainWindow.webContents.on('render-process-gone', (event, details) => {
-    console.log('Render process gone:', details.reason);
-    createWindow();
-  });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
