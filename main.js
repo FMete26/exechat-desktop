@@ -2,7 +2,7 @@ const { app, BrowserWindow, shell, session } = require('electron');
 
 app.commandLine.appendSwitch('enable-usermedia-screen-capturing');
 app.commandLine.appendSwitch('enable-experimental-web-platform-features');
-app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors');
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 let mainWindow;
 
@@ -29,16 +29,21 @@ function createWindow() {
     callback(true);
   });
 
-  session.defaultSession.setPermissionCheckHandler((webContents, permission) => {
-    return true;
-  });
-
-  session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
-    callback({ video: request.videoRequested, audio: request.audioRequested });
-  });
+  session.defaultSession.setPermissionCheckHandler(() => true);
 
   mainWindow.loadURL('https://exechat.duckdns.org');
-  mainWindow.once('ready-to-show', () => mainWindow.show());
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+    mainWindow.webContents.openDevTools(); // Geçici debug için
+  });
+
+  mainWindow.webContents.on('crashed', (e, killed) => {
+    console.log('CRASHED:', killed);
+  });
+
+  mainWindow.webContents.on('render-process-gone', (e, details) => {
+    console.log('RENDER GONE:', details.reason, details.exitCode);
+  });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
