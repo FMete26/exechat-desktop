@@ -1,14 +1,14 @@
 const { app, BrowserWindow, shell, session } = require('electron');
+const path = require('path');
+
+process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 
 app.commandLine.appendSwitch('enable-usermedia-screen-capturing');
-app.commandLine.appendSwitch('enable-experimental-web-platform-features');
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
-app.commandLine.appendSwitch('disable-renderer-backgrounding');
-app.commandLine.appendSwitch('force-fieldtrials', 'WebRTC-SupportForScreenCaptureKillSwitch/Disabled/');
-
-if (app.commandLine.hasSwitch('no-sandbox') === false) {
-  app.commandLine.appendSwitch('no-sandbox');
-}
+app.commandLine.appendSwitch('disable-web-security');
+app.commandLine.appendSwitch('allow-running-insecure-content');
+app.commandLine.appendSwitch('ignore-certificate-errors');
+app.commandLine.appendSwitch('disable-features', 'IsolateOrigins,site-per-process');
 
 let mainWindow;
 
@@ -22,25 +22,34 @@ function createWindow() {
     backgroundColor: '#0f0f14',
     webPreferences: {
       nodeIntegration: false,
-      contextIsolation: true,
+      contextIsolation: false,
       webSecurity: false,
+      allowRunningInsecureContent: true,
       experimentalFeatures: true,
-      sandbox: false
+      sandbox: false,
+      partition: 'persist:exechat'
     },
     autoHideMenuBar: true,
     show: false
   });
 
-  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+  const ses = mainWindow.webContents.session;
+  
+  ses.setPermissionRequestHandler((webContents, permission, callback) => {
     callback(true);
   });
-  session.defaultSession.setPermissionCheckHandler(() => true);
+  
+  ses.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
+    return true;
+  });
+
+  ses.setDisplayMediaRequestHandler((request, callback) => {
+    callback({ video: request.videoRequested, audio: request.audioRequested });
+  });
 
   mainWindow.loadURL('https://exechat.duckdns.org');
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-    mainWindow.webContents.openDevTools();
-  });
+  
+  mainWindow.once('ready-to-show', () => mainWindow.show());
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
