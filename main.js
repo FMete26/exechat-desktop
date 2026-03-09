@@ -1,10 +1,10 @@
 const { app, BrowserWindow, shell, session } = require('electron');
 
-let mainWindow;
-
 app.commandLine.appendSwitch('enable-usermedia-screen-capturing');
-app.commandLine.appendSwitch('allow-http-screen-capture');
 app.commandLine.appendSwitch('enable-experimental-web-platform-features');
+app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors');
+
+let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -18,7 +18,8 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       webSecurity: false,
-      experimentalFeatures: true
+      experimentalFeatures: true,
+      sandbox: false
     },
     autoHideMenuBar: true,
     show: false
@@ -26,6 +27,10 @@ function createWindow() {
 
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
     callback(true);
+  });
+
+  session.defaultSession.setPermissionCheckHandler((webContents, permission) => {
+    return true;
   });
 
   session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
