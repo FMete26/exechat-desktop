@@ -12,6 +12,8 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
+    minWidth: 900,
+    minHeight: 600,
     title: 'ExeChat',
     backgroundColor: '#0f0f14',
     webPreferences: {
@@ -29,13 +31,11 @@ function createWindow() {
   mainWindow.webContents.session.setPermissionCheckHandler(() => true);
 
   mainWindow.loadURL('https://exechat.duckdns.org');
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-    mainWindow.webContents.openDevTools({ mode: 'detach' }); // Ayrı pencerede açılır
-  });
+  mainWindow.once('ready-to-show', () => mainWindow.show());
 
-  mainWindow.webContents.on('render-process-gone', (e, details) => {
-    console.log('CRASH REASON:', details.reason, details.exitCode);
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
   });
 
   mainWindow.on('close', (e) => {
